@@ -1,0 +1,15 @@
+CompileFlags:
+  Add:
+    - "-std=c++26"
+
+Diagnostics:
+  ClangTidy:
+    Add:
+      - google-*
+      - modernize-*
+      - readability-*
+      - performance-*
+    Remove:
+      - modernize-use-trailing-return-type
+      - readability-identifier-length
+      - google-build-using-namespace

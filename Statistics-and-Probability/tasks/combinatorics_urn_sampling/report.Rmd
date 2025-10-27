@@ -1,0 +1,88 @@
+---
+title: "Analysis: Urn Sampling (Combinatorics)"
+author: "Mateusz Szczukiewicz"
+date: "`r Sys.Date()`"
+output: 
+  pdf_document:   
+    toc: true
+    latex_engine: xelatex
+  html_document: 
+    toc: true
+    theme: united
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 6)
+library(ggplot2)
+library(readr)
+library(glue)
+```
+
+# 1. Problem Description
+
+An urn contains 3 white balls (W) and 7 blue balls (B). We draw 3 balls without replacement. What is the probability of drawing at least two blue balls?
+
+# 2. Analytical Solution (C++)
+
+We use the combinatorics library, specifically the combinations function (based on the Symbol of Newton), to calculate the exact probability using the classical definition P(A)=|A|/|Ω|. We run the compiled analytics.cpp program.
+
+```{r analytics}
+analytics_exe <- file.path("..", "..", "build", "tasks", "combinatorics_urn_sampling", "combinatorics_urn_sampling_analytics")
+
+analytics_result_str <- tail(system(analytics_exe, intern = TRUE), 1)
+analytics_result_num <- as.numeric(analytics_result_str)
+
+analytical_fraction <- "49/60"
+```
+
+The analytical probability P(A) is `r analytics_result_str` (exactly `r analytical_fraction`).
+
+```cpp
+// analytics.cpp snippet:
+// long long omega = Stats::Combinatorics::combinations(10, 3);
+// long long successes = Stats::Combinatorics::combinations(7, 2) * Stats::Combinatorics::combinations(3, 1) + 
+//                       Stats::Combinatorics::combinations(7, 3) * Stats::Combinatorics::combinations(3, 0);
+// double probability = static_cast<double>(successes) / omega;
+// std::cout << probability << std::endl;
+```
+
+# 3. Simulation Verification (C++ & R)
+
+We run the simulation.cpp program, which performs a Monte Carlo simulation of the urn drawing experiment `r {N_TRIALS <- 1e6; format(N_TRIALS, scientific = FALSE)}` times. The C++ program saves the convergence data (estimated probability after intervals of trials) to sim_data.csv.
+
+```{r simulation}
+simulation_exe <- file.path("..", "..", "build", "tasks", "combinatorics_urn_sampling", "combinatorics_urn_sampling_simulation")
+
+system(simulation_exe)
+
+sim_data <- read_csv("sim_data.csv")
+
+final_sim_result <- tail(sim_data$P_A, 1)
+total_trials <- tail(sim_data$Trial, 1)
+```
+
+Simulation result (after `r format(total_trials, scientific = FALSE)` trials): `r final_sim_result`
+
+# 4. Convergence Visualization (R)
+
+The following plot, generated in R using ggplot2, shows how the estimated probability P(A) from the Monte Carlo simulation (blue line) converges towards the exact analytical result (red dashed line) as the number of trials increases.
+
+```{r convergence_plot}
+ggplot(sim_data, aes(x = Trial, y = P_A)) +
+    geom_line(color = "steelblue", alpha = 0.8) +
+    geom_hline(aes(yintercept = analytics_result_num), color = "red", linetype = "dashed", size = 1) +
+    scale_x_continuous(labels = scales::comma) +
+    labs(
+        title = "Monte Carlo Simulation Convergence (Urn Sampling)",
+        subtitle = "Problem: P(>= 2 Blue | Draw 3 from 3W, 7B without replacement)",
+        x = "Number of Trials",
+        y = "Estimated P(A)",
+        caption = glue("Red Dashed Line: Analytical Result ({analytical_fraction} ≈ {round(analytics_result_num, 4)})")
+    ) +
+    theme_minimal(base_size = 12) +
+    theme(plot.caption = element_text(hjust = 0))
+```
+
+# 5. Conclusion
+
+The analytical result for the probability of drawing at least two blue balls, calculated as `r round(analytics_result_num, 4)` (`r analytical_fraction`), was successfully verified by the Monte Carlo simulation. The simulation, after `r format(total_trials, scientific = FALSE)` trials, converged to a value of `r round(final_sim_result, 4)`, closely matching the theoretical prediction. The convergence plot visually confirms this agreement.
