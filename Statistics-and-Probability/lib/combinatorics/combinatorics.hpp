@@ -78,10 +78,10 @@ constexpr int64_t combinations(int n, int k) {
 
   int64_t res = 1;
   for (int i = 1; i <= k; ++i) {
-    if (res > __LONG_LONG_MAX__ / (n - 1 + i)) {
+    if (res > __LONG_LONG_MAX__ / (n - i + 1)) {
       throw std::overflow_error("Combinations overflow");
     }
-    res = res * (n - 1 + i) / i;
+    res = res * (n - i + 1) / i;
   }
   return res;
 }
@@ -111,4 +111,4 @@ inline int64_t permutations_with_rep(const std::vector<int>& k_counts) {
 }
 }  // namespace Stats::Combinatorics
 
-#endif  // LIB_COMBINATORICS_HPP
+#endif
